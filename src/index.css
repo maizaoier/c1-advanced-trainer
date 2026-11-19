@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-tap-highlight-color: transparent; }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+  ::selection { background: rgb(253 224 71 / .6); }
+}
+@layer components {
+  .reading { @apply max-w-3xl leading-relaxed text-[16.5px] text-slate-800 dark:text-slate-200; }
+  .ev { @apply bg-emerald-100 text-emerald-900 dark:bg-emerald-900/50 dark:text-emerald-100 rounded px-0.5 ring-1 ring-emerald-400/60; }
+  .trap { @apply bg-coral-100 text-coral-900 dark:bg-coral-900/60 dark:text-coral-100 rounded px-0.5 ring-1 ring-coral-400/60; }
+  .user-mark { @apply bg-yellow-200/80 dark:bg-yellow-500/30 rounded; }
+}
