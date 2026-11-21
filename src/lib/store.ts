@@ -23,6 +23,7 @@ export function freshProgress(): Progress {
     attempts: [],
     days: {},
     drafts: {},
+    progressLog: {},
   };
 }
 

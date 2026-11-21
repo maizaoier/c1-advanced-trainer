@@ -2,16 +2,17 @@ import { useState } from 'react';
 import type { HomeTask } from '../types';
 import type { Route } from '../lib/router';
 import {
-  currentGrammarUnit, daysLeft, dueCardIds, dueMistakes, mastery, markTask, newCardIds, newLeftToday,
+  currentGrammarUnit, daysLeft, dueCardIds, dueMistakes, markTask, newCardIds, newLeftToday,
   streak, todayLog, useProgress,
 } from '../lib/store';
 import { fmtDate, parseDayKey } from '../lib/date';
 import { nextExercise, podcastOfDay } from '../lib/plan';
 import { PART_LABEL } from '../lib/content';
 import ScoreDashboard from '../components/ScoreDashboard';
+import OverallProgress from '../components/OverallProgress';
 import PodcastCard from '../components/PodcastCard';
 import Settings from './Settings';
-import { Card, SectionTitle, Sheet } from '../components/ui';
+import { Sheet } from '../components/ui';
 import { IconGear } from '../components/ui/icons';
 
 interface TaskProps { icon: string; title: string; sub: string; minutes: number; done?: boolean; onClick: () => void; accent?: boolean }
@@ -76,6 +77,8 @@ export default function Home({ go }: { go: (r: Route) => void }) {
         <div className="text-sm opacity-90">hasta el {fmtDate(parseDayKey(p.settings.examDate))}</div>
       </div>
 
+      <OverallProgress p={p} />
+
       <ScoreDashboard p={p} />
 
       <div className="mb-2 mt-6 flex items-end justify-between px-1">
@@ -84,12 +87,6 @@ export default function Home({ go }: { go: (r: Route) => void }) {
       </div>
       <div className="space-y-2.5">{tasks.map(({ key, ...x }) => <Task key={key} {...x} />)}</div>
       <button onClick={() => setSettings(true)} className="mt-3 w-full py-2 text-center text-sm font-semibold text-emerald-700 dark:text-emerald-400">Elegir qué tareas aparecen</button>
-
-      <SectionTitle>Progreso</SectionTitle>
-      <Card className="grid grid-cols-2 gap-4">
-        <div><div className="text-2xl font-extrabold">{Math.round(mastery(p, 'vocab') * 100)}%</div><div className="text-xs text-slate-500">vocabulario dominado</div></div>
-        <div><div className="text-2xl font-extrabold">{Math.round(mastery(p, 'grammar') * 100)}%</div><div className="text-xs text-slate-500">gramática dominada</div></div>
-      </Card>
 
       <Sheet open={settings} onClose={() => setSettings(false)}><Settings onClose={() => setSettings(false)} /></Sheet>
       <Sheet open={podcast} onClose={() => setPodcast(false)}>

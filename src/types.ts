@@ -165,6 +165,8 @@ export interface Progress {
   attempts: Attempt[];
   days: Record<string, DayLog>;
   drafts: Record<string, string>;
+  /** overall preparation (0-1) recorded once per day, to show daily gains */
+  progressLog: Record<string, number>;
 }
 
 export const BASELINE: Record<Skill, number> = {
