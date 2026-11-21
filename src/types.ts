@@ -134,7 +134,7 @@ export interface DayLog {
   minutes: number;
   newCards: number;
   /** daily plan tasks completed, e.g. { listening: true } */
-  done: Record<string, boolean>;
+  done: Record<string, boolean | number>;
 }
 
 export interface Settings {
@@ -147,7 +147,14 @@ export interface Settings {
   /** optional self/examiner estimate on the Cambridge scale (0 = use baseline) */
   manualWriting: number;
   manualSpeaking: number;
+  /** which tasks appear on the Today screen */
+  homeTasks: Record<HomeTask, boolean>;
+  /** preferred voices for listening (by name); empty = automatic */
+  voiceA: string;
+  voiceB: string;
 }
+
+export type HomeTask = 'vocab' | 'grammar' | 'reading' | 'podcast' | 'listening' | 'writing' | 'speaking';
 
 export interface Progress {
   version: 2;
@@ -167,3 +174,12 @@ export const BASELINE: Record<Skill, number> = {
   writing: 180,
   speaking: 184,
 };
+
+// ───────────── Grammar theory & real listening sources ─────────────
+export interface GrammarSection { title: string; explain: string; examples: string[]; tip?: string }
+export interface GrammarTheory { intro: string; sections: GrammarSection[] }
+
+export interface PodcastLink { label: string; url: string }
+export interface Podcast {
+  id: string; name: string; kind: string; minutes: number; level: string; parts: string; why: string; links: PodcastLink[];
+}

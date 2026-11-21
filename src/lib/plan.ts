@@ -1,5 +1,6 @@
-import type { ExamExercise, Progress } from '../types';
-import { EXERCISES } from './content';
+import type { ExamExercise, Podcast, Progress } from '../types';
+import { EXERCISES, PODCASTS } from './content';
+import { planDay } from './store';
 
 /** Accuracy per exam part from saved attempts (null = never done). */
 export function partAccuracy(p: Progress, part: string): number | null {
@@ -10,27 +11,21 @@ export function partAccuracy(p: Progress, part: string): number | null {
   return t ? c / t : null;
 }
 
-/** Next exercise for a skill: never-done first, then weakest part, then least recently done. */
-export function nextExercise(p: Progress, skill: 'listening' | 'reading', dayIndex: number): ExamExercise {
-  const list = EXERCISES.filter((e) => e.skill === skill);
-  const count = (e: ExamExercise) => p.attempts.filter((a) => a.exerciseId === e.id).length;
-  const fresh = list.filter((e) => count(e) === 0);
-  if (fresh.length) return fresh[dayIndex % fresh.length];
-  return list.slice().sort((a, b) => {
-    const pa = partAccuracy(p, a.part) ?? 0, pb = partAccuracy(p, b.part) ?? 0;
-    return pa - pb || count(a) - count(b);
-  })[0];
+const tries = (p: Progress, e: ExamExercise) => p.attempts.filter((a) => a.exerciseId === e.id).length;
+
+/** Next exercise: never-done first (rotating parts), then weakest part, then least practised. */
+export function nextExercise(p: Progress, skill: 'listening' | 'reading', part?: string): ExamExercise {
+  const list = EXERCISES.filter((e) => e.skill === skill && (!part || e.part === part));
+  const fresh = list.filter((e) => tries(p, e) === 0);
+  if (fresh.length) {
+    if (part) return fresh[0];
+    // rotate parts day by day so every part comes up
+    const parts = [...new Set(fresh.map((e) => e.part))];
+    const wanted = parts[planDay(p) % parts.length];
+    return fresh.find((e) => e.part === wanted) ?? fresh[0];
+  }
+  return list.slice().sort((a, b) => ((partAccuracy(p, a.part) ?? 0) - (partAccuracy(p, b.part) ?? 0)) || tries(p, a) - tries(p, b))[0];
 }
 
-export const EXTERNAL_LISTENING = [
-  { name: 'BBC Radio 4 · The Food Programme / Desert Island Discs', why: 'Entrevistas largas como la Part 3: opiniones matizadas.' },
-  { name: 'BBC 6 Minute English → Learning English “The English We Speak”', why: 'Expresiones idiomáticas y paráfrasis rápidas.' },
-  { name: 'TED Talks (sin subtítulos)', why: 'Monólogos tipo Part 2: datos concretos y números.' },
-  { name: 'The Guardian · Today in Focus', why: 'Debates con cambios de opinión (hedging) como en Part 1.' },
-];
-export const EXTERNAL_QUESTIONS = [
-  '¿Cuál era la opinión principal del hablante? Escríbela con tus propias palabras (paráfrasis).',
-  '¿En algún momento cambió de opinión o matizó algo? ¿Con qué palabras (however, mind you, having said that…)?',
-  'Anota 3 datos concretos (nombres, cifras, lugares) que se mencionaran.',
-  'Anota 3 palabras o expresiones nuevas y escribe una frase con cada una.',
-];
+export const podcastOfDay = (p: Progress): Podcast => PODCASTS[planDay(p) % PODCASTS.length];
+export const exercisesOf = (skill: 'listening' | 'reading', part: string) => EXERCISES.filter((e) => e.skill === skill && e.part === part);

@@ -1,37 +1,38 @@
 import type { Route } from '../lib/router';
-import { CARDS, UNITS, UNIT_BY_ID } from '../lib/content';
-import { dueCardIds, newCardIds, newLeftToday, unlockedUnitCount, useProgress, vocabMastery } from '../lib/store';
+import { CARDS, UNIT_BY_ID, VOCAB_UNITS } from '../lib/content';
+import { dueCardIds, mastery, newCardIds, newLeftToday, unlockedVocabUnits, useProgress } from '../lib/store';
 import { Button, Card, Pill, ProgressBar, SectionTitle, TopBar } from '../components/ui';
 
 const TYPE_ES: Record<string, string> = { w: 'Palabras', pv: 'Phrasal verbs', id: 'Idioms', co: 'Colocaciones', wf: 'Word formation', wx: 'Word formation (Part 3)', g: 'Gramática', kt: 'Transformaciones (Part 4)' };
 
+/** Vocabulary tab: Destination topic units with progress. */
 export function Library({ go }: { go: (r: Route) => void }) {
   const p = useProgress();
-  const unlocked = unlockedUnitCount(p);
-  const due = dueCardIds(p).length;
-  const nw = Math.min(newLeftToday(p), newCardIds(p, 999).length);
+  const unlocked = unlockedVocabUnits(p);
+  const due = dueCardIds(p, 'vocab').length;
+  const nw = Math.min(newLeftToday(p, 'vocab'), newCardIds(p, 'vocab', 999).length);
   return (
     <div>
-      <TopBar title="Vocabulario y gramática" />
+      <TopBar title="Vocabulario" />
       <Card>
         <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Destination C1 · repetición espaciada</div>
-        <div className="mt-1 text-3xl font-extrabold">{Math.round(vocabMastery(p) * 100)}% <span className="text-base font-medium text-slate-500">dominado</span></div>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Mantiene tu Use of English (196) y alimenta el vocabulario que aparece en Reading y Listening. Definiciones y ejemplos del libro.</p>
-        <Button className="mt-4" onClick={() => go({ name: 'study' })} disabled={!due && !nw}>{due || nw ? `Estudiar · ${due} repasos + ${nw} nuevas` : '✓ Al día'}</Button>
+        <div className="mt-1 text-3xl font-extrabold">{Math.round(mastery(p, 'vocab') * 100)}% <span className="text-base font-medium text-slate-500">dominado</span></div>
+        <ProgressBar value={mastery(p, 'vocab')} className="mt-3" />
+        <Button className="mt-4" onClick={() => go({ name: 'study', track: 'vocab' })} disabled={!due && !nw}>{due || nw ? `Estudiar · ${due} repasos + ${nw} nuevas` : '✓ Al día'}</Button>
       </Card>
       <SectionTitle>Unidades · se desbloquea una al día</SectionTitle>
       <Card className="!py-1">
-        {UNITS.map((u, i) => {
+        {VOCAB_UNITS.map((u, i) => {
           const seen = u.cards.filter((id) => p.cards[id]).length;
           const locked = i >= unlocked;
           return (
             <button key={u.id} onClick={() => go({ name: 'unit', id: u.id })} className="flex w-full items-center gap-3 border-b border-slate-100 py-3 text-left last:border-0 dark:border-slate-800">
-              <Pill tone={u.kind === 'V' ? 'indigo' : 'emerald'}>{u.kind === 'V' ? 'VOC' : 'GRAM'} {u.num}</Pill>
+              <Pill tone="indigo">{u.num}</Pill>
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold">{u.name} {locked && '🔒'}</span>
                 <ProgressBar value={seen / u.cards.length} className="mt-1.5 !h-1.5" />
               </span>
-              <span className="text-xs tabular-nums text-slate-500">{seen}/{u.cards.length}</span>
+              <span className="text-xs tabular-nums text-slate-500">{Math.round((seen / u.cards.length) * 100)}%</span>
             </button>
           );
         })}
@@ -52,9 +53,8 @@ export function UnitView({ id, go, onBack }: { id: string; go: (r: Route) => voi
       <Card>
         <div className="text-2xl font-extrabold">{u.name}</div>
         <div className="text-slate-500">{u.nameEs}</div>
-        <Button className="mt-4" onClick={() => go({ name: 'study', unit: u.id })} disabled={!pending}>{pending ? `Estudiar nuevas de esta unidad (${Math.min(20, pending)})` : '✓ Todas vistas'}</Button>
+        <Button className="mt-4" onClick={() => go({ name: 'study', track: 'vocab', unit: u.id })}>{pending ? `Estudiar esta unidad (${Math.min(20, pending)} nuevas)` : 'Repasar esta unidad'}</Button>
       </Card>
-      {u.rules.length > 0 && (<><SectionTitle>Teoría</SectionTitle><Card><ul className="list-disc space-y-2 pl-5 text-[15px]">{u.rules.map((r) => <li key={r}>{r}</li>)}</ul></Card></>)}
       {Object.entries(byType).map(([t, ids]) => (
         <div key={t}>
           <SectionTitle>{TYPE_ES[t]} · {ids.length}</SectionTitle>
@@ -66,8 +66,8 @@ export function UnitView({ id, go, onBack }: { id: string; go: (r: Route) => voi
                   {c.term && <b>{c.term} </b>}{c.pos && <span className="text-xs text-slate-500">{c.pos} </span>}
                   {c.definition && <div className="text-slate-600 dark:text-slate-300">{c.definition}</div>}
                   {c.items && <div className="text-slate-600 dark:text-slate-300">{c.items.join(', ')}</div>}
-                  {c.question && <div>{c.sentence1 && <>{c.sentence1} <b>{c.keyword}</b><br /></>}{c.question}{c.base && <b> ({c.base})</b>}</div>}
-                  {(c.answers || c.options) && <div className="text-xs text-emerald-700 dark:text-emerald-400">→ {c.answers?.join(' / ') ?? c.options?.[c.correctIndex ?? 0]}</div>}
+                  {c.question && <div>{c.question}{c.base && <b> ({c.base})</b>}</div>}
+                  {c.answers && <div className="text-xs text-emerald-700 dark:text-emerald-400">→ {c.answers.join(' / ')}</div>}
                 </div>
               );
             })}

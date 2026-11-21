@@ -1,28 +1,21 @@
 import type { ExamExercise } from '../../types';
 import ExamShell from '../exam/ExamShell';
 import AudioPlayer from '../exam/AudioPlayer';
-import QuestionMCQ from '../exam/QuestionMCQ';
-import { Transcript } from './shared';
+import { Mcq, TranscriptCard } from './shared';
 
 /** Part 1: three short extracts, two questions each (A-C). */
 export default function ListeningPart1({ ex, onExit }: { ex: ExamExercise; onExit: () => void }) {
-  const groups = [...new Set(ex.questions.map((q) => q.group ?? ''))];
   return (
-    <ExamShell ex={ex} onExit={onExit}>
-      {(ctx) => (
-        <div className="space-y-6">
-          <AudioPlayer script={ex.script ?? []} locked={ctx.submitted} />
-          {groups.map((g) => (
-            <div key={g} className="space-y-5">
-              <div className="text-xs font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">{g}</div>
-              {ex.questions.filter((q) => q.group === g).map((q) => (
-                <QuestionMCQ key={q.id} ex={ex} q={q} number={ex.questions.indexOf(q) + 1} value={ctx.answers[q.id]} onChange={(v) => ctx.setAnswer(q.id, v)} submitted={ctx.submitted} />
-              ))}
-            </div>
-          ))}
-          <Transcript ex={ex} ctx={ctx} />
-        </div>
+    <ExamShell ex={ex} onExit={onExit} layout="list"
+      tips={['Lee las 6 preguntas antes de escuchar y subraya: ¿opinión, acuerdo, propósito?', 'Espera al final de cada intervención: los hablantes rectifican («Actually…», «Mind you…»).', 'Si la opción menciona algo que se dice, comprueba QUIÉN lo dice y si lo descarta.']}
+      renderText={(ctx) => <AudioPlayer script={ex.script ?? []} locked={ctx.submitted} />}
+      renderAfter={(ctx) => <TranscriptCard ex={ex} ctx={ctx} />}
+      renderQuestion={(q, i, ctx) => (
+        <>
+          {(i === 0 || ex.questions[i - 1].group !== q.group) && <div className="mb-3 text-xs font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">{q.group}</div>}
+          <Mcq ex={ex} q={q} i={i} ctx={ctx} />
+        </>
       )}
-    </ExamShell>
+    />
   );
 }

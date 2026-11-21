@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import type { StudyCard } from '../types';
-import { CARDS, UNIT_BY_ID } from '../lib/content';
+import { CARDS, UNIT_BY_ID, type Track } from '../lib/content';
 import { dueCardIds, examEve, gradeCard, newCardIds, newLeftToday, useProgress, getProgress } from '../lib/store';
 import { intervalLabel, type Grade } from '../lib/srs';
 import { answerMatches, norm, shuffle } from '../lib/text';
@@ -19,19 +19,25 @@ function modeOf(c: StudyCard, seen: boolean): Mode {
 }
 const fmtEx = (s: string) => s.split(/(\[.*?\])/).map((t, i) => (t.startsWith('[') ? <b key={i}>{t.slice(1, -1)}</b> : <span key={i}>{t}</span>));
 
-function buildQueue(unit?: string): string[] {
+function buildQueue(track: Track, unit?: string): string[] {
   const p = getProgress();
-  if (unit) return newCardIds(p, 20, unit);
-  const due = dueCardIds(p).slice(0, 50);
-  const fresh = newCardIds(p, Math.min(newLeftToday(p), Math.max(0, 50 - Math.min(due.length, 35))));
+  if (unit) {
+    // a single unit: what is new or due; if everything is up to date, a full review of the unit
+    const due = dueCardIds(p, track, unit);
+    const fresh = newCardIds(p, track, 20, unit);
+    const q = [...due, ...fresh];
+    return q.length ? q : shuffle(UNIT_BY_ID[unit]?.cards ?? []).slice(0, 20);
+  }
+  const due = dueCardIds(p, track).slice(0, track === 'vocab' ? 60 : 30);
+  const fresh = newCardIds(p, track, newLeftToday(p, track));
   const out: string[] = [];
   while (due.length || fresh.length) { if (due.length) out.push(due.shift()!); if (due.length) out.push(due.shift()!); if (fresh.length) out.push(fresh.shift()!); }
   return out;
 }
 
-export default function Study({ unit, onExit }: { unit?: string; onExit: () => void }) {
+export default function Study({ track, unit, onExit }: { track: Track; unit?: string; onExit: () => void }) {
   const p = useProgress();
-  const [queue, setQueue] = useState<string[]>(() => buildQueue(unit));
+  const [queue, setQueue] = useState<string[]>(() => buildQueue(track, unit));
   const [total] = useState(queue.length);
   const [done, setDone] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -46,11 +52,11 @@ export default function Study({ unit, onExit }: { unit?: string; onExit: () => v
   if (!c) {
     return (
       <div>
-        <TopBar title="Vocabulario" onBack={onExit} />
+        <TopBar title={track === 'vocab' ? 'Vocabulario' : 'Gramática'} onBack={onExit} />
         <div className="mt-16 text-center">
           <div className="text-6xl">🎉</div>
           <h2 className="mt-3 text-xl font-bold">{total ? 'Sesión completada' : 'No hay tarjetas pendientes'}</h2>
-          <p className="mt-2 text-slate-500">{total ? `${total} tarjetas repasadas.` : 'Vuelve mañana o estudia una unidad concreta desde Vocabulario.'}</p>
+          <p className="mt-2 text-slate-500">{total ? `${total} tarjetas repasadas.` : 'Vuelve mañana o practica una unidad concreta.'}</p>
           <Button className="mt-6" variant="secondary" onClick={onExit}>Volver</Button>
         </div>
       </div>

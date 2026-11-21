@@ -2,6 +2,8 @@ import json,sys,re
 sys.path.insert(0,'tools')
 from content_listening import LISTENING
 from content_reading import READING
+from content_reading_b import READING_B
+READING=READING+READING_B
 errs=[]
 for ex in LISTENING:
     ex['textOrTranscript']='\n\n'.join(f"{l['speaker']}: {l['text']}" for l in ex['script'])
@@ -26,4 +28,7 @@ P['speakingCAE']={
           {"question":"What are the benefits of learning a foreign language as an adult?","prompts":["career","travel","memory","culture","making friends"]}],
  'part4':["Do you think people today have too many choices? Why?","Should governments limit the amount of time children spend online?","Is it better to be good at many things or excellent at one?","How has the way people work changed in recent years?"]}
 json.dump(P,open('src/data/prompts.json','w'),ensure_ascii=False)
+import content_grammar, content_podcasts
+json.dump(content_grammar.GRAMMAR,open('src/data/grammar.json','w'),ensure_ascii=False)
+json.dump({'podcasts':content_podcasts.PODCASTS,'questions':content_podcasts.QUESTIONS},open('src/data/podcasts.json','w'),ensure_ascii=False)
 print('exercises',len(LISTENING+READING),'questions',sum(len(e['questions']) for e in LISTENING+READING),'errors',len(errs))

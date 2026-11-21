@@ -1,7 +1,9 @@
 import examJson from '../data/exam.json';
 import destJson from '../data/destination.json';
 import promptsJson from '../data/prompts.json';
-import type { DestinationData, ExamExercise, StudyCard, StudyUnit, PromptsData } from '../types';
+import grammarJson from '../data/grammar.json';
+import podcastsJson from '../data/podcasts.json';
+import type { DestinationData, ExamExercise, StudyCard, StudyUnit, PromptsData, GrammarTheory, Podcast } from '../types';
 
 export const EXERCISES = examJson as unknown as ExamExercise[];
 export const EXERCISE_BY_ID: Record<string, ExamExercise> = Object.fromEntries(EXERCISES.map((e) => [e.id, e]));
@@ -11,6 +13,20 @@ export const UNITS: StudyUnit[] = dest.units;
 export const UNIT_BY_ID: Record<string, StudyUnit> = Object.fromEntries(UNITS.map((u) => [u.id, u]));
 export const CARDS: Record<string, StudyCard> = Object.fromEntries(dest.cards.map((c) => [c.id, c]));
 export const CARD_ORDER: string[] = UNITS.flatMap((u) => u.cards);
+
+/** Vocabulary units (odd numbers in the book) and grammar units (even numbers) are studied separately. */
+export type Track = 'vocab' | 'grammar';
+export const VOCAB_UNITS = UNITS.filter((u) => u.kind === 'V');
+export const GRAMMAR_UNITS = UNITS.filter((u) => u.kind === 'G');
+export const TRACK_ORDER: Record<Track, string[]> = {
+  vocab: VOCAB_UNITS.flatMap((u) => u.cards),
+  grammar: GRAMMAR_UNITS.flatMap((u) => u.cards),
+};
+
+export const GRAMMAR: Record<string, GrammarTheory> = grammarJson as unknown as Record<string, GrammarTheory>;
+const pod = podcastsJson as unknown as { podcasts: Podcast[]; questions: string[] };
+export const PODCASTS = pod.podcasts;
+export const PODCAST_QUESTIONS = pod.questions;
 
 export interface SpeakingCAE {
   part1: string[];

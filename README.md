@@ -13,8 +13,10 @@ Reparto del entrenamiento según la regla **50 / 35 / 15**: Listening (161), Rea
 
 | Módulo | Contenido |
 |---|---|
-| **Listening (50%)** | Parts 1–4 con audio por voz sintética (2 escuchas como en el examen), transcripción oculta hasta corregir |
-| **Reading (35%)** | Parts 5–8 con tiempo límite estricto (autocorrección a 00:00) y subrayado de frases |
+| **Hoy** | Plan corto y configurable (≈45 min): vocabulario, gramática, un Reading y escucha real; «Repasar fallos» solo cuando hay pendientes |
+| **Listening (50%)** | Escucha real diaria (Cambridge oficial, BBC, Guardian, TED…) con enlaces a YouTube/Spotify + Parts 1–4 con la voz más natural del dispositivo |
+| **Gramática** | Las 12 unidades de Destination con teoría (explicación + ejemplos + trucos de examen) y práctica con repetición espaciada |
+| **Reading (35%)** | Parts 5–8 (8 textos) en pestañas Texto / Preguntas, una pregunta cada vez, tiempo límite estricto y subrayado |
 | **Detector de trampas** | Tras corregir: la paráfrasis exacta en **verde**, las frases trampa en **coral** y por qué cada distractor es falso |
 | **Repasar fallos** | Cada pregunta fallada vuelve con repetición espaciada hasta dominarla |
 | **Vocabulario Destination C1** | 1.763 tarjetas (palabras, phrasal verbs, idioms, colocaciones, word formation, gramática) con definiciones del libro |

@@ -59,7 +59,7 @@ export default function Mistakes({ onExit }: { onExit: () => void }) {
       <div className="mb-3 text-xs font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">{ex.title}</div>
       {ex.skill === 'listening' ? (
         <Card className="mb-4">
-          <Button variant="secondary" onClick={() => { const line = ex.script?.find((l) => context.includes(l.text.slice(0, 40))); speak(line?.text ?? context, p.settings.speechRate, line?.voice); }}>
+          <Button variant="secondary" onClick={() => { const line = ex.script?.find((l) => context.includes(l.text.slice(0, 40))); speak(line?.text ?? context, p.settings.speechRate); }}>
             <IconSpeaker /> Escuchar el fragmento
           </Button>
           {checked && <div className="mt-4"><HighlightedText text={context} marks={marksFor([q])} /></div>}

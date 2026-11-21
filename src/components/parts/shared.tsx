@@ -1,17 +1,15 @@
-import type { ExamExercise } from '../../types';
+import type { ExamExercise, ExamQuestion } from '../../types';
 import HighlightedText from '../exam/HighlightedText';
+import QuestionMCQ from '../exam/QuestionMCQ';
 import type { ShellContext } from '../exam/ExamShell';
-import { Card, SectionTitle } from '../ui';
+import { Card } from '../ui';
 
-/** Transcript is hidden while answering (as in the exam) and revealed with marks after correction. */
-export function Transcript({ ex, ctx }: { ex: ExamExercise; ctx: ShellContext }) {
-  if (!ctx.submitted) return null;
-  return (
-    <>
-      <SectionTitle>Transcripción</SectionTitle>
-      <Card><HighlightedText text={ex.textOrTranscript} marks={ctx.reviewMarks} /></Card>
-    </>
-  );
+export function TextCard({ ex, ctx, renderGap }: { ex: ExamExercise; ctx: ShellContext; renderGap?: (n: number) => React.ReactNode }) {
+  return <Card><HighlightedText text={ex.textOrTranscript} markable={!ctx.submitted} marks={ctx.reviewMarks} renderGap={renderGap} /></Card>;
+}
+
+export function Mcq({ ex, q, i, ctx, compact }: { ex: ExamExercise; q: ExamQuestion; i: number; ctx: ShellContext; compact?: boolean }) {
+  return <QuestionMCQ ex={ex} q={q} number={i + 1} value={ctx.answers[q.id]} onChange={(v) => ctx.setAnswer(q.id, v)} submitted={ctx.submitted} compact={compact} />;
 }
 
 export function OptionList({ options, title }: { options: string[]; title?: string }) {
@@ -26,3 +24,7 @@ export function OptionList({ options, title }: { options: string[]; title?: stri
     </Card>
   );
 }
+
+export const TranscriptCard = ({ ex, ctx }: { ex: ExamExercise; ctx: ShellContext }) => (
+  <Card><HighlightedText text={ex.textOrTranscript} marks={ctx.reviewMarks} /></Card>
+);

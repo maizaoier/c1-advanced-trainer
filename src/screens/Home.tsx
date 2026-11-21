@@ -1,23 +1,31 @@
 import { useState } from 'react';
+import type { HomeTask } from '../types';
 import type { Route } from '../lib/router';
-import { daysLeft, dueCardIds, dueMistakes, newCardIds, newLeftToday, streak, todayLog, useProgress, markTask, vocabMastery } from '../lib/store';
-import { daysBetween, fmtDate, parseDayKey } from '../lib/date';
-import { nextExercise, EXTERNAL_LISTENING, EXTERNAL_QUESTIONS } from '../lib/plan';
+import {
+  currentGrammarUnit, daysLeft, dueCardIds, dueMistakes, mastery, markTask, newCardIds, newLeftToday,
+  streak, todayLog, useProgress,
+} from '../lib/store';
+import { fmtDate, parseDayKey } from '../lib/date';
+import { nextExercise, podcastOfDay } from '../lib/plan';
 import { PART_LABEL } from '../lib/content';
 import ScoreDashboard from '../components/ScoreDashboard';
+import PodcastCard from '../components/PodcastCard';
 import Settings from './Settings';
-import { Card, SectionTitle, Sheet, Button } from '../components/ui';
+import { Card, SectionTitle, Sheet } from '../components/ui';
 import { IconGear } from '../components/ui/icons';
 
-function Task({ icon, title, sub, share, done, onClick }: { icon: string; title: string; sub: string; share?: string; done?: boolean; onClick: () => void }) {
+interface TaskProps { icon: string; title: string; sub: string; minutes: number; done?: boolean; onClick: () => void; accent?: boolean }
+function Task({ icon, title, sub, minutes, done, onClick, accent }: TaskProps) {
   return (
-    <button onClick={onClick} className="flex w-full items-center gap-3.5 border-b border-slate-100 py-3.5 text-left last:border-0 dark:border-slate-800">
-      <span className="grid h-11 w-11 flex-none place-items-center rounded-2xl bg-slate-100 text-xl dark:bg-slate-800">{icon}</span>
+    <button onClick={onClick} className={`flex w-full items-center gap-3.5 rounded-3xl p-4 text-left shadow-sm transition active:scale-[.99] ${done ? 'bg-emerald-50 dark:bg-emerald-950/40' : accent ? 'bg-coral-50 dark:bg-coral-900/30' : 'bg-white dark:bg-slate-900'}`}>
+      <span className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-slate-100 text-2xl dark:bg-slate-800">{icon}</span>
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2 font-semibold">{title}{share && <span className="rounded-md bg-slate-100 px-1.5 text-[10.5px] font-bold text-slate-500 dark:bg-slate-800">{share}</span>}</span>
+        <span className="block font-bold">{title}</span>
         <span className="block truncate text-[13px] text-slate-500">{sub}</span>
       </span>
-      <span className={`grid h-7 w-7 flex-none place-items-center rounded-full border-2 text-sm ${done ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600'}`}>{done ? '✓' : ''}</span>
+      {done
+        ? <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-emerald-500 text-white">✓</span>
+        : <span className="flex-none rounded-xl bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{minutes} min</span>}
     </button>
   );
 }
@@ -25,15 +33,32 @@ function Task({ icon, title, sub, share, done, onClick }: { icon: string; title:
 export default function Home({ go }: { go: (r: Route) => void }) {
   const p = useProgress();
   const [settings, setSettings] = useState(false);
-  const [external, setExternal] = useState(false);
+  const [podcast, setPodcast] = useState(false);
   const t = todayLog(p);
-  const dayIdx = Math.max(0, daysBetween(parseDayKey(p.settings.planStart).getTime(), Date.now()));
-  const lEx = nextExercise(p, 'listening', dayIdx);
-  const rEx = nextExercise(p, 'reading', dayIdx);
-  const due = dueCardIds(p).length;
-  const nw = Math.min(newLeftToday(p), newCardIds(p, 999).length);
+  const on = (k: HomeTask) => p.settings.homeTasks[k];
+
+  const vDue = dueCardIds(p, 'vocab').length;
+  const vNew = Math.min(newLeftToday(p, 'vocab'), newCardIds(p, 'vocab', 999).length);
+  const gUnit = currentGrammarUnit(p);
+  const gDue = dueCardIds(p, 'grammar').length;
+  const gNew = Math.min(newLeftToday(p, 'grammar'), newCardIds(p, 'grammar', 999).length);
+  const rEx = nextExercise(p, 'reading');
+  const lEx = nextExercise(p, 'listening');
+  const pod = podcastOfDay(p);
   const mist = dueMistakes(p).length;
-  const productiveToday = dayIdx % 2 === 0 ? 'writing' : 'speaking';
+
+  const tasks: (TaskProps & { key: string })[] = [];
+  if (on('vocab')) tasks.push({ key: 'vocab', icon: '🧠', title: 'Vocabulario', sub: vDue + vNew ? `${vDue} repasos · ${vNew} nuevas` : 'Al día ✓', minutes: Math.max(1, Math.round(vDue * 0.12 + vNew * 0.3)), done: vDue + vNew === 0 && t.cards > 0, onClick: () => go({ name: 'study', track: 'vocab' }) });
+  if (on('grammar')) tasks.push({ key: 'grammar', icon: '📐', title: `Gramática · ${gUnit.name}`, sub: gDue + gNew ? `${gDue} repasos · ${gNew} preguntas nuevas` : 'Al día ✓', minutes: Math.max(1, Math.round((gDue + gNew) * 0.4)), done: gDue + gNew === 0, onClick: () => go({ name: 'study', track: 'grammar' }) });
+  if (on('reading')) tasks.push({ key: 'reading', icon: '📖', title: PART_LABEL[rEx.part], sub: rEx.title.replace(/^Part \d · /, ''), minutes: Math.round(rEx.timeLimitSeconds / 60), done: !!t.done.reading, onClick: () => go({ name: 'exercise', id: rEx.id }) });
+  if (on('podcast')) tasks.push({ key: 'podcast', icon: '🎧', title: 'Escucha real', sub: pod.name, minutes: Math.min(15, pod.minutes), done: !!t.done.external, onClick: () => setPodcast(true) });
+  if (on('listening')) tasks.push({ key: 'listening', icon: '🎙️', title: PART_LABEL[lEx.part], sub: lEx.title.replace(/^Part \d · /, ''), minutes: Math.round(lEx.timeLimitSeconds / 60), done: !!t.done.listening, onClick: () => go({ name: 'exercise', id: lEx.id }) });
+  if (on('writing')) tasks.push({ key: 'writing', icon: '✍️', title: 'Writing', sub: 'Una tarea de examen', minutes: 40, done: !!t.done.writing, onClick: () => go({ name: 'productive' }) });
+  if (on('speaking')) tasks.push({ key: 'speaking', icon: '🗣️', title: 'Speaking', sub: 'Simulacro breve', minutes: 10, done: !!t.done.speaking, onClick: () => go({ name: 'productive' }) });
+  if (mist) tasks.push({ key: 'mistakes', icon: '🎯', title: 'Repasar fallos', sub: `${mist} preguntas en las que caíste en la trampa`, minutes: Math.max(2, Math.round(mist * 0.7)), accent: true, onClick: () => go({ name: 'mistakes' }) });
+
+  const left = tasks.filter((x) => !x.done);
+  const total = left.reduce((s, x) => s + x.minutes, 0);
 
   return (
     <div>
@@ -49,30 +74,29 @@ export default function Home({ go }: { go: (r: Route) => void }) {
         <div className="text-sm opacity-90">Cambridge C1 Advanced</div>
         <div className="text-5xl font-extrabold tracking-tight">{daysLeft(p)} días</div>
         <div className="text-sm opacity-90">hasta el {fmtDate(parseDayKey(p.settings.examDate))}</div>
-        <div className="mt-3 text-sm opacity-95">Prioridad: <b>Listening</b> (161) y <b>Reading</b> (170). Tu Use of English (196) ya es tu colchón.</div>
       </div>
 
       <ScoreDashboard p={p} />
 
-      <SectionTitle>Plan de hoy · regla 50 / 35 / 15</SectionTitle>
-      <Card className="!py-1">
-        <Task icon="🎧" share="50%" title={`${PART_LABEL[lEx.part]}`} sub={lEx.title.replace(/^Part \d · /, '')} done={t.done.listening} onClick={() => go({ name: 'exercise', id: lEx.id })} />
-        <Task icon="📖" share="35%" title={`${PART_LABEL[rEx.part]}`} sub={`${rEx.title.replace(/^Part \d · /, '')} · ${Math.round(rEx.timeLimitSeconds / 60)} min`} done={t.done.reading} onClick={() => go({ name: 'exercise', id: rEx.id })} />
-        <Task icon="🎯" title="Repasar fallos" sub={mist ? `${mist} preguntas en las que caíste en la trampa` : 'Nada pendiente ahora'} done={mist === 0 && Object.keys(p.mistakes).length > 0} onClick={() => go({ name: 'mistakes' })} />
-        <Task icon="🧠" title="Vocabulario Destination" sub={`${due} repasos · ${nw} nuevas · dominio ${Math.round(vocabMastery(p) * 100)}%`} done={due === 0 && nw === 0} onClick={() => go({ name: 'study' })} />
-        <Task icon={productiveToday === 'writing' ? '✍️' : '🗣️'} share="15%" title={productiveToday === 'writing' ? 'Writing' : 'Speaking'} sub={productiveToday === 'writing' ? 'Una tarea · objetivo subir 180 → 190+' : 'Simulacro breve para no perder fluidez'} done={t.done.writing || t.done.speaking} onClick={() => go({ name: 'productive' })} />
-        <Task icon="📻" title="Escucha activa externa" sub="20 min de podcast + 4 preguntas de control" done={t.done.external} onClick={() => setExternal(true)} />
+      <div className="mb-2 mt-6 flex items-end justify-between px-1">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Hoy</h2>
+        <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">{left.length ? `≈ ${total} min` : '🎉 Todo hecho'}</span>
+      </div>
+      <div className="space-y-2.5">{tasks.map(({ key, ...x }) => <Task key={key} {...x} />)}</div>
+      <button onClick={() => setSettings(true)} className="mt-3 w-full py-2 text-center text-sm font-semibold text-emerald-700 dark:text-emerald-400">Elegir qué tareas aparecen</button>
+
+      <SectionTitle>Progreso</SectionTitle>
+      <Card className="grid grid-cols-2 gap-4">
+        <div><div className="text-2xl font-extrabold">{Math.round(mastery(p, 'vocab') * 100)}%</div><div className="text-xs text-slate-500">vocabulario dominado</div></div>
+        <div><div className="text-2xl font-extrabold">{Math.round(mastery(p, 'grammar') * 100)}%</div><div className="text-xs text-slate-500">gramática dominada</div></div>
       </Card>
 
       <Sheet open={settings} onClose={() => setSettings(false)}><Settings onClose={() => setSettings(false)} /></Sheet>
-      <Sheet open={external} onClose={() => setExternal(false)}>
-        <h2 className="text-xl font-bold">Escucha activa (20 min)</h2>
-        <p className="mt-1 text-sm text-slate-500">Escucha sin subtítulos y responde en un papel. Esto entrena la atención al detalle que te falló en el examen.</p>
-        <SectionTitle>Elige uno</SectionTitle>
-        <Card className="space-y-3">{EXTERNAL_LISTENING.map((x) => <div key={x.name}><b>{x.name}</b><div className="text-sm text-slate-500">{x.why}</div></div>)}</Card>
-        <SectionTitle>Preguntas de control</SectionTitle>
-        <Card><ol className="list-decimal space-y-2 pl-5 text-[15px]">{EXTERNAL_QUESTIONS.map((q) => <li key={q}>{q}</li>)}</ol></Card>
-        <Button className="mt-4" onClick={() => { markTask('external'); setExternal(false); }}>Hecho ✓</Button>
+      <Sheet open={podcast} onClose={() => setPodcast(false)}>
+        <h2 className="mb-1 text-xl font-bold">Escucha real de hoy</h2>
+        <p className="mb-4 text-sm text-slate-500">Audio de verdad, sin subtítulos. Responde las preguntas de control en un papel o mentalmente.</p>
+        <PodcastCard p={pod} done={!!t.done.external} onDone={() => { markTask('external'); setPodcast(false); }} />
+        <button onClick={() => { setPodcast(false); go({ name: 'listening' }); }} className="mt-4 w-full py-2 text-sm font-semibold text-emerald-700 dark:text-emerald-400">Ver todas las fuentes de audio →</button>
       </Sheet>
     </div>
   );
