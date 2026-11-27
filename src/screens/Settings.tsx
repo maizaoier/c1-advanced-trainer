@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { Progress } from '../types';
 import { freshProgress, getProgress, recommendedNew, replaceProgress, updateProgress, useProgress } from '../lib/store';
+import { CARD_ORDER, CARDS } from '../lib/content';
+
+const CORE_COUNT = CARD_ORDER.filter((id) => CARDS[id].core).length;
 import { listVoices, speakWithVoice, type VoiceInfo } from '../lib/tts';
 import { Button, toast } from '../components/ui';
 import { IconX } from '../components/ui/icons';
@@ -36,6 +39,17 @@ export default function Settings({ onClose }: { onClose: () => void }) {
   return (
     <div>
       <div className="mb-2 flex items-center justify-between"><h2 className="text-xl font-bold">Ajustes</h2><button onClick={onClose} aria-label="Cerrar"><IconX /></button></div>
+      <div className="border-b border-slate-200 py-3 dark:border-slate-800">
+        <div className="mb-2">Qué vocabulario estudiar</div>
+        <div className="grid grid-cols-2 gap-2">
+          {([['essential', 'Esencial', `${CORE_COUNT} tarjetas`], ['all', 'Completo', `${CARD_ORDER.length} tarjetas`]] as const).map(([v, l, n]) => (
+            <button key={v} onClick={() => set('selection', v)} className={`rounded-xl border-2 px-3 py-2.5 text-left transition ${s.selection === v ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950' : 'border-transparent bg-white dark:bg-slate-900'}`}>
+              <div className="font-semibold">{l}</div><div className="text-xs text-slate-500">{n}</div>
+            </button>
+          ))}
+        </div>
+        <div className="mt-1.5 text-xs text-slate-500">Esencial: sin las palabras más básicas ni las listas de colocaciones y familias de palabras. Mantiene todos los phrasal verbs, idioms y ejercicios de word formation. Lo que ya hayas marcado como «ya me la sé» ({Object.keys(p.known).length}) no aparece en ninguna.</div>
+      </div>
       <div className={row}><span>Fecha del examen</span><input type="date" className={input} value={s.examDate} onChange={(e) => e.target.value && set('examDate', e.target.value)} /></div>
       <div className="border-b border-slate-200 py-3 dark:border-slate-800">
         <div className="flex justify-between"><span>Tarjetas nuevas al día</span><b>{s.newPerDay || `Auto (${recommendedNew(p)})`}</b></div>

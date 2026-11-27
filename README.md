@@ -12,6 +12,10 @@ Todas las versiones van firmadas con la misma clave, así que las nuevas se inst
 
 - **1.584 tarjetas** de las 13 unidades de vocabulario: palabras (con definición y ejemplo del libro y traducción),
   phrasal verbs, idioms, colocaciones, familias de palabras y word formation (Part 3).
+- **Selección esencial (946 tarjetas, por defecto)**: sin las palabras más básicas (frecuencia de uso muy alta, salvo las que en C1 tienen otro significado)
+  ni las listas de colocaciones/familias de palabras; mantiene todos los phrasal verbs, idioms y ejercicios de word formation.
+  Se puede cambiar a la selección completa (1.584) en Ajustes. Criterios en `tools/select_essential.py`.
+- **«Ya me la sé»**: quita una tarjeta nueva para siempre (se recupera desde su unidad).
 - **Sesión diaria**: repasos pendientes + tarjetas nuevas (automático según los días que faltan para el examen).
 - Botones *Otra vez / Difícil / Bien / Fácil*; las tarjetas difíciles vuelven antes.
 - Los phrasal verbs ya vistos se preguntan completando la frase.

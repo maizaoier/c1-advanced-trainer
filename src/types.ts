@@ -17,6 +17,8 @@ export interface StudyCard {
   answers?: string[];
   moreSenses?: { pos: string; definition: string }[];
   fromBook?: boolean;
+  /** part of the shorter 'essential' selection */
+  core?: boolean;
 }
 
 export interface StudyUnit {
@@ -60,6 +62,8 @@ export interface Settings {
   planStart: string;
   /** preferred pronunciation voice (by name); empty = automatic */
   voice: string;
+  /** 'essential' = shorter hand-picked selection, 'all' = every card in the book */
+  selection: 'essential' | 'all';
 }
 
 export interface Progress {
@@ -70,4 +74,6 @@ export interface Progress {
   days: Record<string, DayLog>;
   /** vocabulary progress (0-1) recorded once per day, to show daily gains */
   progressLog: Record<string, number>;
+  /** cards the user marked as already known: never shown */
+  known: Record<string, true>;
 }

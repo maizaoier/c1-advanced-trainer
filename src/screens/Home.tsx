@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { Route } from '../lib/router';
 import {
-  daysLeft, dueCardIds, examEve, learnedCount, newCardIds, newLeftToday, progressValue, seenCount, streak, todayLog,
+  activeIds, daysLeft, dueCardIds, examEve, learnedCount, newCardIds, newLeftToday, progressValue, seenCount, streak, todayLog,
   unseenCount, updateProgress, useProgress, newPerDay,
 } from '../lib/store';
-import { CARD_ORDER } from '../lib/content';
 import { addDays, dayKey, fmtDate, parseDayKey, startOfDay } from '../lib/date';
 import ProgressRing from '../components/ProgressRing';
 import Settings from './Settings';
@@ -24,7 +23,7 @@ export default function Home({ go }: { go: (r: Route) => void }) {
   const prev = Object.keys(p.progressLog).filter((k) => k < today).sort().at(-1);
   const gain = Math.round((value - (prev ? p.progressLog[prev] : 0)) * 1000) / 10;
   const minutes = Math.max(1, Math.round(due * 0.12 + nw * 0.3));
-  const total = CARD_ORDER.length;
+  const total = activeIds(p).length;
 
   // store today's value once it changes, to show tomorrow how much was gained
   useEffect(() => {

@@ -10,10 +10,11 @@ export function freshProgress(): Progress {
   return {
     version: 2,
     updatedAt: 0,
-    settings: { examDate: '2026-12-22', newPerDay: 0, speechRate: 0.95, darkMode: 'system', planStart: dayKey(), voice: '' },
+    settings: { examDate: '2026-12-22', newPerDay: 0, speechRate: 0.95, darkMode: 'system', planStart: dayKey(), voice: '', selection: 'essential' },
     cards: {},
     days: {},
     progressLog: {},
+    known: {},
   };
 }
 
@@ -37,10 +38,12 @@ function merge(parsed: Partial<Progress> & { settings?: Partial<Progress['settin
       darkMode: s.darkMode ?? 'system',
       planStart: s.planStart ?? base.settings.planStart,
       voice: s.voice ?? s.voiceA ?? '',
+      selection: s.selection ?? 'essential',
     },
     cards,
     days,
     progressLog: parsed.progressLog ?? {},
+    known: parsed.known ?? {},
   };
 }
 
@@ -91,8 +94,17 @@ export const planDay = (p: Progress) => Math.max(0, daysBetween(parseDayKey(p.se
 const emptyDay = (): DayLog => ({ cards: 0, correct: 0, wrong: 0, newCards: 0 });
 export function todayLog(p: Progress): DayLog { return p.days[dayKey()] ?? emptyDay(); }
 
+// ───────── which cards are in play ─────────
+/** A card is active if it is in the chosen selection and the user hasn't marked it as known. */
+export const isActive = (p: Progress, id: string) => !p.known[id] && (p.settings.selection === 'all' || !!CARDS[id]?.core);
+export const activeIds = (p: Progress, ids: string[] = CARD_ORDER) => ids.filter((id) => isActive(p, id));
+
+export function markKnown(id: string, known = true): void {
+  updateProgress((d) => { if (known) d.known[id] = true; else delete d.known[id]; });
+}
+
 export function unseenCount(p: Progress): number {
-  return CARD_ORDER.reduce((n, id) => n + (p.cards[id] ? 0 : 1), 0);
+  return activeIds(p).reduce((n, id) => n + (p.cards[id] ? 0 : 1), 0);
 }
 /** Spread what is left over the days before the exam, capped at 40/day so a session stays ~15 min. */
 export function recommendedNew(p: Progress): number {
@@ -108,7 +120,7 @@ export function unlockedUnits(p: Progress): number {
 }
 export function dueCardIds(p: Progress, unit?: string): string[] {
   const now = Date.now();
-  const ids = unit ? CARD_ORDER.filter((id) => CARDS[id].unit === unit) : CARD_ORDER;
+  const ids = activeIds(p, unit ? CARD_ORDER.filter((id) => CARDS[id].unit === unit) : CARD_ORDER);
   return ids.filter((id) => { const c = p.cards[id]; return c && c.due <= now; }).sort((a, b) => p.cards[a].due - p.cards[b].due);
 }
 export function newCardIds(p: Progress, limit: number, onlyUnit?: string): string[] {
@@ -116,7 +128,7 @@ export function newCardIds(p: Progress, limit: number, onlyUnit?: string): strin
   const units = onlyUnit ? UNITS.filter((u) => u.id === onlyUnit) : UNITS.slice(0, unlockedUnits(p));
   for (const u of units) {
     for (const id of u.cards) {
-      if (!p.cards[id]) { out.push(id); if (out.length >= limit) return out; }
+      if (!p.cards[id] && isActive(p, id)) { out.push(id); if (out.length >= limit) return out; }
     }
   }
   return out;
@@ -147,11 +159,12 @@ export function streak(p: Progress): number {
 const cardStrength = (p: Progress, id: string) => { const c = p.cards[id]; return c ? Math.min(1, c.interval / 10) : 0; };
 
 /** Overall progress: half for studying each card once, half for consolidating it. */
-export function progressValue(p: Progress, ids: string[] = CARD_ORDER): number {
+export function progressValue(p: Progress, all: string[] = CARD_ORDER): number {
+  const ids = activeIds(p, all);
   if (!ids.length) return 0;
   let seen = 0, strength = 0;
   for (const id of ids) { if (p.cards[id]) seen++; strength += cardStrength(p, id); }
   return 0.5 * (seen / ids.length) + 0.5 * (strength / ids.length);
 }
-export const seenCount = (p: Progress, ids: string[] = CARD_ORDER) => ids.filter((id) => p.cards[id]).length;
-export const learnedCount = (p: Progress, ids: string[] = CARD_ORDER) => ids.filter((id) => (p.cards[id]?.interval ?? 0) >= 10).length;
+export const seenCount = (p: Progress, ids: string[] = CARD_ORDER) => activeIds(p, ids).filter((id) => p.cards[id]).length;
+export const learnedCount = (p: Progress, ids: string[] = CARD_ORDER) => activeIds(p, ids).filter((id) => (p.cards[id]?.interval ?? 0) >= 10).length;

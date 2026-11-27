@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react';
 import type { StudyCard } from '../types';
 import { CARDS, TYPE_LABEL, UNIT_BY_ID } from '../lib/content';
-import { dueCardIds, examEve, getProgress, gradeCard, newCardIds, newLeftToday, useProgress } from '../lib/store';
+import { dueCardIds, examEve, getProgress, gradeCard, markKnown, newCardIds, newLeftToday, useProgress } from '../lib/store';
 import { intervalLabel, type Grade } from '../lib/srs';
 import { answerMatches, norm, shuffle } from '../lib/text';
 import { speak, ttsAvailable } from '../lib/tts';
-import { Button, Card, ProgressBar, TopBar } from '../components/ui';
+import { Button, Card, ProgressBar, TopBar, toast } from '../components/ui';
 import { IconSpeaker } from '../components/ui/icons';
 
 type Mode = 'flash' | 'type' | 'cloze';
@@ -91,6 +91,21 @@ export default function Study({ unit, onExit }: { unit?: string; onExit: () => v
     setTimeout(() => { lock.current = false; }, 150);
   };
 
+  /** New card the user already knows: removed for good (can be restored from the unit page). */
+  const skipKnown = () => {
+    if (lock.current) return;
+    lock.current = true;
+    markKnown(c.id);
+    setQueue((q) => q.slice(1));
+    setDone((n) => n + 1);
+    setRevealed(false); setTyped([]); setResult(undefined);
+    toast('Quitada. Puedes recuperarla desde su unidad.');
+    setTimeout(() => { lock.current = false; }, 150);
+  };
+  const knownButton = !st && (
+    <button onClick={skipKnown} className="mt-2 w-full py-2 text-sm font-semibold text-slate-500">Ya me la sé · quitar</button>
+  );
+
   const clozeParts = (c.example ?? '').match(/\[(.*?)\]/g)?.map((x) => x.slice(1, -1)) ?? [];
   const check = () => {
     if (mode === 'type') setResult(answerMatches(typed[0] ?? '', c.answers ?? []));
@@ -133,6 +148,7 @@ export default function Study({ unit, onExit }: { unit?: string; onExit: () => v
             )}
           </Card>
           <div className="mt-4">{revealed ? grades : <Button onClick={reveal}>Mostrar respuesta</Button>}</div>
+          {knownButton}
         </>
       )}
 
@@ -155,6 +171,7 @@ export default function Study({ unit, onExit }: { unit?: string; onExit: () => v
             <>
               <Button className="mt-3" onClick={check}>Comprobar</Button>
               <Button variant="ghost" onClick={() => setResult(false)}>No lo sé</Button>
+              {knownButton}
             </>
           ) : (
             <>
