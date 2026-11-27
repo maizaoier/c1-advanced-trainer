@@ -1,8 +1,7 @@
 name: Web app (GitHub Pages)
 
 on:
-  push:
-    branches: [main]
+  # manual only: enable GitHub Pages (Settings → Pages → Source: GitHub Actions) and run it from the Actions tab
   workflow_dispatch:
 
 permissions:

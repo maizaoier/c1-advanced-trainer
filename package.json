@@ -1,14 +1,13 @@
 {
-  "name": "c1-advanced-trainer",
+  "name": "c1-vocab-trainer",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "content": "python3 tools/build_content.py",
     "android": "npm run build && npx cap sync android"
   },
   "dependencies": {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { IconBack, IconX } from './icons';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -73,29 +73,6 @@ export function Sheet({ open, onClose, children }: { open: boolean; onClose: () 
       </div>
     </div>
   );
-}
-
-/** Countdown that calls onExpire exactly once when it reaches 00:00. */
-export function useCountdown(seconds: number, running: boolean, onExpire: () => void): number {
-  const [left, setLeft] = useState(seconds);
-  const fired = useRef(false);
-  const cb = useRef(onExpire);
-  useEffect(() => { cb.current = onExpire; }, [onExpire]);
-  useEffect(() => {
-    if (!running) return;
-    const id = setInterval(() => setLeft((s) => Math.max(0, s - 1)), 1000);
-    return () => clearInterval(id);
-  }, [running]);
-  useEffect(() => {
-    if (left === 0 && running && !fired.current) { fired.current = true; cb.current(); }
-  }, [left, running]);
-  return left;
-}
-
-/** Elapsed seconds since mount. */
-export function useElapsed(): () => number {
-  const [start] = useState(() => Date.now());
-  return () => Math.round((Date.now() - start) / 1000);
 }
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;

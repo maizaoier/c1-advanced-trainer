@@ -1,12 +1,5 @@
-import examJson from '../data/exam.json';
 import destJson from '../data/destination.json';
-import promptsJson from '../data/prompts.json';
-import grammarJson from '../data/grammar.json';
-import podcastsJson from '../data/podcasts.json';
-import type { DestinationData, ExamExercise, StudyCard, StudyUnit, PromptsData, GrammarTheory, Podcast } from '../types';
-
-export const EXERCISES = examJson as unknown as ExamExercise[];
-export const EXERCISE_BY_ID: Record<string, ExamExercise> = Object.fromEntries(EXERCISES.map((e) => [e.id, e]));
+import type { DestinationData, StudyCard, StudyUnit } from '../types';
 
 const dest = destJson as unknown as DestinationData;
 export const UNITS: StudyUnit[] = dest.units;
@@ -14,40 +7,9 @@ export const UNIT_BY_ID: Record<string, StudyUnit> = Object.fromEntries(UNITS.ma
 export const CARDS: Record<string, StudyCard> = Object.fromEntries(dest.cards.map((c) => [c.id, c]));
 export const CARD_ORDER: string[] = UNITS.flatMap((u) => u.cards);
 
-/** Vocabulary units (odd numbers in the book) and grammar units (even numbers) are studied separately. */
-export type Track = 'vocab' | 'grammar';
-export const VOCAB_UNITS = UNITS.filter((u) => u.kind === 'V');
-export const GRAMMAR_UNITS = UNITS.filter((u) => u.kind === 'G');
-export const TRACK_ORDER: Record<Track, string[]> = {
-  vocab: VOCAB_UNITS.flatMap((u) => u.cards),
-  grammar: GRAMMAR_UNITS.flatMap((u) => u.cards),
+export const TYPE_LABEL: Record<string, string> = {
+  w: 'Vocabulary', pv: 'Phrasal verb', id: 'Idiom', co: 'Collocations', wf: 'Word formation', wx: 'Word formation · Part 3',
 };
-
-export const GRAMMAR: Record<string, GrammarTheory> = grammarJson as unknown as Record<string, GrammarTheory>;
-const pod = podcastsJson as unknown as { podcasts: Podcast[]; questions: string[] };
-export const PODCASTS = pod.podcasts;
-export const PODCAST_QUESTIONS = pod.questions;
-
-export interface SpeakingCAE {
-  part1: string[];
-  part2: { task: string }[];
-  part3: { question: string; prompts: string[] }[];
-  part4: string[];
-}
-const prompts = promptsJson as unknown as PromptsData & { speakingCAE: SpeakingCAE };
-export const PROMPTS = prompts;
-
-export const PART_LABEL: Record<string, string> = {
-  L1: 'Listening Part 1', L2: 'Listening Part 2', L3: 'Listening Part 3', L4: 'Listening Part 4',
-  R5: 'Reading Part 5', R6: 'Reading Part 6', R7: 'Reading Part 7', R8: 'Reading Part 8',
-};
-export const PART_HINT: Record<string, string> = {
-  L1: 'Extractos cortos · actitud y opinión',
-  L2: 'Sentence completion · palabra exacta',
-  L3: 'Entrevista larga · 4 opciones',
-  L4: 'Multiple matching · 2 tareas a la vez',
-  R5: 'Comprensión detallada · tono del autor',
-  R6: 'Cross-text · comparar 4 opiniones',
-  R7: 'Gapped text · cohesión',
-  R8: 'Multiple matching · velocidad',
+export const TYPE_ES: Record<string, string> = {
+  w: 'Palabras', pv: 'Phrasal verbs', id: 'Idioms', co: 'Colocaciones', wf: 'Familias de palabras', wx: 'Word formation (Part 3)',
 };
